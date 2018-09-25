@@ -97,7 +97,7 @@ public class ReadOnlyFileHandler implements Closeable {
 		stat.st_mode.set(FileStat.S_IFREG | 0444);
 		attrUtil.copyBasicFileAttributesFromNioToFuse(attrs, stat);
 		if(attrs.size() == -1){
-			LOG.warn("Wrong ciphertext file size of file {}. Setting the displayed cleartext file size to zero.", node.toString());
+			LOG.warn("Negative file size of file {}. Setting the displayed size to zero.", node.toString());
 			stat.st_size.set(0);
 		}
 		return 0;
