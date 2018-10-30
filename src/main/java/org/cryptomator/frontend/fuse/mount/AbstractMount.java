@@ -13,7 +13,8 @@ abstract class AbstractMount implements Mount {
 
 	public AbstractMount(Path directory, EnvironmentVariables envVars) {
 		this.envVars = envVars;
-		this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+		//this.fuseAdapter = AdapterFactory.createReadWriteAdapter(directory);
+		this.fuseAdapter = AdapterFactory.createCompleteAdapter(directory);
 	}
 
 	protected void mount(String... additionalFuseOptions) throws CommandFailedException {

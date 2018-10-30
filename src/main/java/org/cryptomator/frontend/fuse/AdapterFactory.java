@@ -18,4 +18,11 @@ public class AdapterFactory {
 		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().fuseNioAdapterModule(module).build();
 		return comp.readWriteAdapter();
 	}
+
+	public static FuseNioAdapter createCompleteAdapter(Path root) {
+		FuseNioAdapterModule module = new FuseNioAdapterModule(root);
+		FuseNioAdapterComponent comp = DaggerFuseNioAdapterComponent.builder().fuseNioAdapterModule(module).build();
+		return comp.completeAdapter();
+	}
+
 }

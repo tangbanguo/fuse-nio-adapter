@@ -10,4 +10,5 @@ public interface FuseNioAdapterComponent {
 
 	ReadWriteAdapter readWriteAdapter();
 
+	CompleteAdapter completeAdapter();
 }
