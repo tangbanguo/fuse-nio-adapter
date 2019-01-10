@@ -4,9 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -16,6 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 class MacMounter implements Mounter {
@@ -42,13 +41,13 @@ class MacMounter implements Mounter {
 	}
 
 	public boolean installedVersionSupported() {
-		String versionString = getVersionString();
-		if (versionString == null) {
+		Optional<String> versionString = getVersionString();
+		if (!versionString.isPresent()) {
 			LOG.error("Did not find {} in document {}.", OSXFUSE_XML_VERSION_TEXT, OSXFUSE_VERSIONFILE_LOCATION);
 			return false;
 		}
 
-		Integer[] parsedVersion = Arrays.stream(versionString.split("\\.")).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
+		Integer[] parsedVersion = Arrays.stream(versionString.get().split("\\.")).map(s -> Integer.valueOf(s)).toArray(Integer[]::new);
 		for (int i = 0; i < OSXFUSE_MINIMUM_SUPPORTED_VERSION.length && i < parsedVersion.length; i++) {
 			if (parsedVersion[i] < OSXFUSE_MINIMUM_SUPPORTED_VERSION[i]) {
 				return false;
@@ -65,25 +64,30 @@ class MacMounter implements Mounter {
 	}
 
 
-	private String getVersionString() {
-		String version = null;
+	private Optional<String> getVersionString() {
 		try (InputStream in = Files.newInputStream(OSXFUSE_VERSIONFILE_LOCATION, StandardOpenOption.READ)) {
-			XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
-			while (reader.hasNext()) {
-				reader.next();
-				if (reader.getEventType() == XMLStreamReader.CHARACTERS && OSXFUSE_XML_VERSION_TEXT.equalsIgnoreCase(reader.getText())) {
-					reader.next();
-					reader.next();
-					reader.next();
-					version = reader.getElementText();
-				}
-			}
+			return Optional.of(PlistParser.parse(in).get("OSXFUSE_XML_VERSION_TEXT").getString());
+//			boolean foundBundleVersionKey = false;
+//			while (reader.hasNext()) {
+//				reader.next();
+//				if (foundBundleVersionKey && reader.getEventType() == XMLStreamReader.START_ELEMENT && PLIST_KEY.equals(reader.getLocalName()))
+//				if (reader.getEventType() == XMLStreamReader.START_ELEMENT && OSXFUSE_XML_VERSION_TEXT.equalsIgnoreCase(reader.getElementText())) {
+//					foundBundleVersionKey = true;
+//				}
+//				if (reader.getEventType() == XMLStreamReader.CHARACTERS && OSXFUSE_XML_VERSION_TEXT.equalsIgnoreCase(reader.getText())) {
+//					reader.next();
+//					reader.next();
+//					reader.next();
+//					version = reader.getElementText();
+//				}
+//			}
 		} catch (XMLStreamException | FactoryConfigurationError e) {
 			LOG.error("Could not parse file {} to detect version of OSXFUSE.", OSXFUSE_VERSIONFILE_LOCATION);
-		} catch (IOException e1) {
+			return Optional.empty();
+		} catch (IOException e) {
 			LOG.error("Could not read file {} to detect version of OSXFUSE.", OSXFUSE_VERSIONFILE_LOCATION);
+			return Optional.empty();
 		}
-		return version;
 	}
 
 	private static class MacMount extends AbstractMount {
