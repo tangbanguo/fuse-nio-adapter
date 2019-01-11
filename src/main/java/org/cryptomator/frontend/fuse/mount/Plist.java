@@ -1,9 +1,30 @@
 package org.cryptomator.frontend.fuse.mount;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 import java.time.Instant;
+import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Plist {
+
+	private final Map<String, Value> dict;
+
+	Plist(Map<String, Value> dict) {
+		this.dict = dict;
+	}
+
+	public static Plist parse(InputStream in) throws XMLStreamException {
+		XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
+		return new PlistParser(reader).parse();
+	}
+
+	public Map<String, Value> dict() {
+		return dict;
+	}
 
 	enum ValueType {
 		DICT(Map.class),
@@ -74,6 +95,11 @@ public class Plist {
 			} else {
 				throw new UnsupportedOperationException();
 			}
+		}
+
+		@Override
+		public String toString() {
+			return type.name() + "<" + value + ">";
 		}
 	}
 

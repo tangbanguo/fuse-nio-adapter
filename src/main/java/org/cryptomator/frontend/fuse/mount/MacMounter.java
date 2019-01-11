@@ -66,21 +66,8 @@ class MacMounter implements Mounter {
 
 	private Optional<String> getVersionString() {
 		try (InputStream in = Files.newInputStream(OSXFUSE_VERSIONFILE_LOCATION, StandardOpenOption.READ)) {
-			return Optional.of(PlistParser.parse(in).get("OSXFUSE_XML_VERSION_TEXT").getString());
-//			boolean foundBundleVersionKey = false;
-//			while (reader.hasNext()) {
-//				reader.next();
-//				if (foundBundleVersionKey && reader.getEventType() == XMLStreamReader.START_ELEMENT && PLIST_KEY.equals(reader.getLocalName()))
-//				if (reader.getEventType() == XMLStreamReader.START_ELEMENT && OSXFUSE_XML_VERSION_TEXT.equalsIgnoreCase(reader.getElementText())) {
-//					foundBundleVersionKey = true;
-//				}
-//				if (reader.getEventType() == XMLStreamReader.CHARACTERS && OSXFUSE_XML_VERSION_TEXT.equalsIgnoreCase(reader.getText())) {
-//					reader.next();
-//					reader.next();
-//					reader.next();
-//					version = reader.getElementText();
-//				}
-//			}
+			Plist plist = Plist.parse(in);
+			return Optional.of(plist.dict().get(OSXFUSE_XML_VERSION_TEXT).getString());
 		} catch (XMLStreamException | FactoryConfigurationError e) {
 			LOG.error("Could not parse file {} to detect version of OSXFUSE.", OSXFUSE_VERSIONFILE_LOCATION);
 			return Optional.empty();

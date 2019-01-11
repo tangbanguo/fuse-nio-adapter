@@ -6,7 +6,7 @@ import javax.xml.stream.XMLStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlistDictParser {
+class PlistDictParser {
 
 	private static final String ELEM_DICT = "dict";
 	private static final String ELEM_KEY = "key";
@@ -23,7 +23,11 @@ public class PlistDictParser {
 	private final Map<String, Plist.Value> dictionary;
 	private String key;
 
-	PlistDictParser(XMLStreamReader reader) {
+	/**
+	 * @param reader A {@link XMLStreamReader} currently at the beginning of a new dict element.
+	 * @throws IllegalStateException If the reader is not currently positioned at the beginning of a dict.
+	 */
+	public PlistDictParser(XMLStreamReader reader) throws IllegalStateException {
 		if (reader.getEventType() != XMLStreamConstants.START_ELEMENT || !ELEM_DICT.equalsIgnoreCase(reader.getLocalName())) {
 			throw new IllegalStateException("Not at beginning of a new <dict>.");
 		}
@@ -31,7 +35,7 @@ public class PlistDictParser {
 		this.dictionary = new HashMap<>();
 	}
 
-	Plist.Value parse() throws XMLStreamException {
+	public Plist.Value parse() throws XMLStreamException {
 		while (reader.hasNext()) {
 			reader.next();
 			switch (reader.getEventType()) {

@@ -17,22 +17,54 @@ class PlistValueParser {
 	private static final String ELEM_FALSE = "false";
 
 	private final XMLStreamReader reader;
-	private ValueType type;
-	private StringBuilder contentBuffer;
+	private final ValueType type;
+	private final StringBuilder characterBuffer;
 
-	PlistValueParser(XMLStreamReader reader) {
+	/**
+	 * @param reader A {@link XMLStreamReader} currently at the beginning of a new primitive value (data, date, real, integer, string, true, false) element.
+	 * @throws IllegalStateException If the reader is not currently positioned at the beginning of a primitive value element.
+	 */
+	public PlistValueParser(XMLStreamReader reader) throws IllegalStateException {
+		if (reader.getEventType() != XMLStreamConstants.START_ELEMENT ) {
+			throw new IllegalStateException("Reader not at beginning of a new element.");
+		}
+		this.type = getExpectedElementType(reader.getLocalName());
+		this.characterBuffer = new StringBuilder();
 		this.reader = reader;
 	}
+	
+	private static ValueType getExpectedElementType(String localName) {
+		switch (localName.toLowerCase()) {
+			case ELEM_STRING:
+				return ValueType.STRING;
+			case ELEM_DATA:
+				return ValueType.DATA;
+			case ELEM_DATE:
+				return ValueType.DATE;
+			case ELEM_INTEGER:
+				return ValueType.INTEGER;
+			case ELEM_REAL:
+				return ValueType.REAL;
+			case ELEM_TRUE:
+				return ValueType.TRUE;
+			case ELEM_FALSE:
+				return ValueType.FALSE;
+			default:
+				throw new IllegalStateException("Unexpected element <" + localName + ">.");
+		}
+	}
 
-	Plist.Value parse() throws XMLStreamException {
+	/**
+	 * Proceeds parsing till the end of the current value element.
+	 * @return The parsed value
+	 * @throws XMLStreamException
+	 */
+	public Plist.Value parse() throws XMLStreamException {
 		while (reader.hasNext()) {
 			reader.next();
 			switch (reader.getEventType()) {
-				case XMLStreamConstants.START_ELEMENT:
-					type = startElement();
-					break;
-				case XMLStreamConstants.CDATA:
-					parseContent();
+				case XMLStreamConstants.CHARACTERS:
+					appendCharacters();
 					break;
 				case XMLStreamConstants.END_ELEMENT:
 					Object value = endElement();
@@ -44,42 +76,15 @@ class PlistValueParser {
 		throw new IllegalStateException("Element not ended");
 	}
 
-	private ValueType startElement() throws XMLStreamException {
-		String element = reader.getLocalName().toLowerCase();
-		switch (element) {
-			case ELEM_STRING:
-				contentBuffer = new StringBuilder();
-				return ValueType.STRING;
-			case ELEM_DATA:
-				contentBuffer = new StringBuilder();
-				return ValueType.DATA;
-			case ELEM_DATE:
-				contentBuffer = new StringBuilder();
-				return ValueType.DATE;
-			case ELEM_INTEGER:
-				contentBuffer = new StringBuilder();
-				return ValueType.INTEGER;
-			case ELEM_REAL:
-				contentBuffer = new StringBuilder();
-				return ValueType.REAL;
-			case ELEM_TRUE:
-				return ValueType.TRUE;
-			case ELEM_FALSE:
-				return ValueType.FALSE;
-			default:
-				throw new XMLStreamException("Unexpected primitive value: " + element);
-		}
-	}
-
-	private void parseContent() {
-		contentBuffer.append(reader.getTextCharacters());
+	private void appendCharacters() {
+		characterBuffer.append(reader.getText());
 	}
 
 	private Object endElement() throws XMLStreamException {
 		String element = reader.getLocalName().toLowerCase();
 		switch (element) {
 			case ELEM_STRING:
-				return contentBuffer.toString();
+				return characterBuffer.toString();
 			case ELEM_TRUE:
 				return Boolean.TRUE;
 			case ELEM_FALSE:

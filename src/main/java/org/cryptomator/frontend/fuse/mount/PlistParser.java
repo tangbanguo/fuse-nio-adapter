@@ -1,11 +1,8 @@
 package org.cryptomator.frontend.fuse.mount;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.InputStream;
-import java.util.Map;
 
 /**
  * SAX parser for Apple's Property List (.plist) files.
@@ -23,11 +20,11 @@ class PlistParser {
 	private final XMLStreamReader reader;
 	private Plist.Value dict;
 
-	private PlistParser(XMLStreamReader reader) {
+	public PlistParser(XMLStreamReader reader) {
 		this.reader = reader;
 	}
 
-	private Plist.Value parse() throws XMLStreamException {
+	public Plist parse() throws XMLStreamException {
 		while (reader.hasNext()) {
 			reader.next();
 			switch (reader.getEventType()) {
@@ -38,11 +35,12 @@ class PlistParser {
 					if (dict == null) {
 						throw new XMLStreamException("Didn't find any <dict>.");
 					}
+					break;
 				default:
 					break;
 			}
 		}
-		return dict;
+		return new Plist(dict.getDict());
 	}
 
 	private void startElement() throws XMLStreamException {
@@ -65,11 +63,6 @@ class PlistParser {
 		if (!ATTR_VERSION.equalsIgnoreCase(firstAttrName) || !SUPPORTED_PLIST_VERSION.equals(firstAttrValue)) {
 			throw new UnsupportedPlistException("Unsupported plist, expected version=\"1.0\", but found " + firstAttrName + "=\"" + firstAttrValue + "\"");
 		}
-	}
-
-	public static Map<String, Plist.Value> parse(InputStream in) throws XMLStreamException {
-		XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
-		return new PlistParser(reader).parse().getDict();
 	}
 
 	public static class UnsupportedPlistException extends XMLStreamException {
